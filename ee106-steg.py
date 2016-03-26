@@ -2,13 +2,6 @@ from PIL import Image
 import sys
 
 
-def set_bit(v, index, x):
-    mask = 1 << index
-    v &= ~mask
-    if x:
-        v |= mask
-    return v
-
 #Take a message from the user and convert it to a binary string
 def stringToBinary(message):
     string=""
@@ -32,7 +25,6 @@ def binaryToString(binary):
     
 
 #Main hide function
-
 def hide(image, message):    
     im = Image.open(image)
     binary = stringToBinary(message)
@@ -53,30 +45,22 @@ def hide(image, message):
 
     for h in range(im.height):
             for w in range(im.width):
-                    
                     (r, g, b, a) = im.getpixel((w, h))
                     newpix = im.putpixel((w, h), (r + b0, g + b1, b + b2))
                     newim = im.save('steg.png', 'PNG')
                     #Where b0, b1, b2 are the sequence of bits to be written
 
 
+def extract(image):
+    im = Image.open(image)
+
+    for h in range(im.height):
+        for w in range(im.width):
+            (r, g, b, a) = im.getpixel((w, h))
+            print([int(bin(r))[2::] & 1, int(bin(g))[2::] & 1, int(bin(b))[2::] & 1)
 
             
+
 ###  MAIN  ###
 
 if __name__ == "__main__":
-    
-
-
-
-              
-message = str(input("What is the message to be hidden? "))
-
-binary = stringToBinary(message)
-print(binary)
-
-binaryToString(binary)
-
-
-
-
