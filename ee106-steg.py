@@ -3,15 +3,18 @@ import sys
 import argparse
 
 
-# Writes a bit to the LSB of a byte
+#Writes a bit to the LSB of a byte
 def setbit(oldbyte, bit):
     if bit == 1:
-       if oldbyte % 2 == 0:
+        if oldbyte % 2 == 0:
             return int(oldbyte + 1)
-       else:
+        else:
             return int(oldbyte)
     elif bit == 0:
         return int(oldbyte & 0b11111110)
+    else:
+        print("Error - invalid bit")
+        sys.exit()
 
 #Take a message from the user and convert it to a binary string
 def stringToBinary(message):
@@ -54,32 +57,41 @@ def store(image, message):
         print("Error - image is not in the correct format")
         sys.exit()
 
-#Writes binary sequence to image
+    while(len(binary)%3):
+        binary += '0'
+
+    binlength = len(binary)
     c = 0
+
+#Writes binary sequence to image
     for h in range(im.height):
             for w in range(im.width):
                     (r, g, b, a) = im.getpixel((w, h))
-                    nr = setbit(r, binary[c:c+1:])
-                    ng = setbit(g, binary[c+1:c+2:])
-                    nb = setbit(b, binary[c+2:c+3:])
-                    c = c + 3
+                    if c < len(binary):
+                        r = setbit(r, int(binary[c]))
+                        g = setbit(g, int(binary[c + 1]))
+                        b = setbit(b, int(binary[c + 2]))
+                        c = c + 3
 
-                    im.putpixel((w, h), (nr, ng, nb))
-    newim = im.save(image + '-steg.png', 'PNG')
+                    im.putpixel((w, h), (r, g, b, a))
+    newim = im.save('steg.png', 'PNG')
+    print(binlength)
 
 
-#Main extract function
-def retrieve(image):
+#Main retrieve function
+def retrieve(image, binlength):
     im = Image.open(image)
-    binary = []
-
+    binary = ''
+    c = 0
 
     for h in range(im.height):
         for w in range(im.width):
             (r, g, b, a) = im.getpixel((w, h))
-            binary.append(r & 1)
-            binary.append(g & 1)
-            binary.append(b & 1)           
+            if c < int(binlength):
+                binary += str(r & 1)
+                binary += str(g & 1)
+                binary += str(b & 1)
+                c = c + 3           
 
     message = binaryToString(binary)
     return message
@@ -90,15 +102,16 @@ def retrieve(image):
 def main():
     
     parser = argparse.ArgumentParser(description = "Least Significant Bit Steganography")
-    parser.add_argument('--store', '-s', dest = 'store', help = 'store a message in a PNG image file')
-    parser.add_argument('--retrieve', '-r', dest = 'retrieve', help = 'retrieve a hidden message from a PNG image')
-    opt = parser.parse_args()
+    parser.add_argument('-s', '--store', metavar = '<image file>', dest = 'store', help = 'store a message in a PNG image file')
+    parser.add_argument('-r', '--retrieve', metavar = '<image file>', dest = 'retrieve', help = 'retrieve a hidden message from a PNG image')
+    args = parser.parse_args()
 
-    if opt.store != None:
+    if args.store:
         message = input("Enter a message to store: ")
-        store(opt.store, message)
-    elif opt.retrieve != None:
-        retrieve(opt.retrieve)
+        store(args.store, message)
+    elif args.retrieve:
+        binlength = input("How long is the binary sequence?: ")
+        retrieve(args.retrieve, binlength)
     else:
         sys.exit()
 
